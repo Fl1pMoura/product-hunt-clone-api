@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  url         String
+  creatorId   String   @map("creator_id")
+  creator     String
+  upVotes     Upvote[]
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("products")
+}
+
+model Upvote {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") // ID do usuário vindo do Clerk (Clerk User ID)
+  productId String   @map("product_id") @db.Uuid // Alterado para UUID para corresponder ao id de Product
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, productId]) // Garante que o usuário só pode dar um upvote por produto
+  @@map("upvotes")
+}
+
+model UserProfile {
+  id          String  @id
+  displayName String? @map("display_name")
+  bio         String?
+  avatarUrl   String? @map("avatar_url")
+
+  @@map("users_profile")
+}
