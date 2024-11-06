@@ -2,10 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUpvoteDto } from '../dto/create-upvote.dto';
 import { UpdateUpvoteDto } from '../dto/update-upvote.dto';
 import { UpvotesRepository } from 'src/shared/database/repositories/upvotes';
+import { ProductsRepository } from 'src/shared/database/repositories/products';
+import { PrismaService } from 'src/shared/database/prisma.service';
 
 @Injectable()
 export class UpvotesService {
-  constructor(private readonly UpvotesRepo: UpvotesRepository) {}
+  constructor(
+    private readonly UpvotesRepo: UpvotesRepository,
+    private readonly ProductsRepo: ProductsRepository,
+    private readonly prisma: PrismaService
+  ) {}
   findAll() {
     return this.UpvotesRepo.findAll({ include: { product: true } });
   }
@@ -26,18 +32,30 @@ export class UpvotesService {
     });
 
     if (existingUpvote) {
-      await this.UpvotesRepo.delete({ where: { id: existingUpvote.id } });
+      await this.prisma.$transaction([
+        this.UpvotesRepo.delete({ where: { id: existingUpvote.id } }),
+        this.ProductsRepo.update({
+          where: { id: productId },
+          data: { upvoteCount: { decrement: 1 } },
+        }),
+      ]);
       return { message: 'Upvote removed' };
     } else {
-      const newUpvote = await this.UpvotesRepo.create({
-        data: {
-          userId,
-          productId,
-          createdAt: new Date().toISOString(),
-        },
-      });
+      const newUpvote = await this.prisma.$transaction([
+        this.UpvotesRepo.create({
+          data: {
+            userId,
+            productId,
+            createdAt: new Date().toISOString(),
+          },
+        }),
+        this.ProductsRepo.update({
+          where: { id: productId },
+          data: { upvoteCount: { increment: 1 } },
+        }),
+      ]);
 
-      return newUpvote;
+      return newUpvote[0];
     }
   }
 

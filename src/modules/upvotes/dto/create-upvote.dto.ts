@@ -1,4 +1,10 @@
-import { IsDateString, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateUpvoteDto {
   @IsString()
@@ -12,7 +18,7 @@ export class CreateUpvoteDto {
   productId: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   product: string;
 
   @IsNotEmpty()
