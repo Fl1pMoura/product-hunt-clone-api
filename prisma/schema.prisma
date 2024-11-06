@@ -19,7 +19,7 @@ model Product {
   description String
   url         String
   creatorId   String   @map("creator_id")
-  creator     String
+  creator     String?
   upVotes     Upvote[]
   createdAt   DateTime @default(now()) @map("created_at")
 

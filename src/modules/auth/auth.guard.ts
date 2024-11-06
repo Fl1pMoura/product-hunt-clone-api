@@ -14,9 +14,13 @@ export class AuthGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (process.env.NODE_ENV === 'development') {
+      return true; // Desabilita a autenticação em desenvolvimento
+    }
+
     const isPublic = this.reflector.getAllAndOverride<boolean>(IsPublicKey, [
-      context.getClass(),
       context.getHandler(),
+      context.getClass(),
     ]);
 
     if (isPublic) {
