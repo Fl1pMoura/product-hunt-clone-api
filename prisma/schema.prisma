@@ -15,11 +15,12 @@ datasource db {
 
 model Product {
   id          String   @id @default(uuid()) @db.Uuid
-  name        String
+  name        String   @unique()
   description String
-  url         String
+  url         String?  @unique()
   creatorId   String   @map("creator_id")
   creator     String?
+  tags        Tags[]   @relation("ProductTags") // Relação many-to-many com Tags
   upVotes     Upvote[]
   upvoteCount Int      @default(0) @map("upvote_count")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -27,10 +28,19 @@ model Product {
   @@map("products")
 }
 
+model Tags {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @unique() // Nome único para identificar cada tag
+  upvoteCount Int       @default(0) @map("upvote_count")
+  products    Product[] @relation("ProductTags") // Relação many-to-many com Product
+
+  @@map("tags")
+}
+
 model Upvote {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") // ID do usuário vindo do Clerk (Clerk User ID)
-  productId String   @map("product_id") @db.Uuid // Alterado para UUID para corresponder ao id de Product
+  productId String   @map("product_id") @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
 

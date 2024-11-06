@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsDateString,
   IsNotEmpty,
   IsOptional,
@@ -34,4 +35,9 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsDateString()
   createdAt: string;
+
+  @IsArray()
+  @IsNotEmpty()
+  @IsUUID('4', { each: true })
+  tags: string[];
 }
