@@ -18,12 +18,6 @@ import { IsPublic } from 'src/shared/decorators/IsPublic';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @Post()
-  @UseGuards(AuthGuard)
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
-  }
-
   @Get()
   @IsPublic()
   findAll() {
@@ -34,6 +28,12 @@ export class ProductsController {
   @IsPublic()
   findOne(@Param('productId') productId: string) {
     return this.productsService.findOne(productId);
+  }
+
+  @Post()
+  @UseGuards(AuthGuard)
+  create(@Body() createProductDto: CreateProductDto) {
+    return this.productsService.create(createProductDto);
   }
 
   @Put(':productId')
