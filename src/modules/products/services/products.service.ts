@@ -13,13 +13,14 @@ export class ProductsService {
 
   async findMany() {
     const products = await this.ProductsRepo.findMany({
-      include: { upVotes: true },
+      include: { upVotes: false },
     });
 
     return products;
   }
 
   async findOne(productId: string) {
+    await this.ValidateProduct.validateNotFound(productId);
     const product = await this.ProductsRepo.findUnique({
       where: { id: productId },
     });

@@ -1,22 +1,34 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUpvoteDto } from '../dto/create-upvote.dto';
-import { UpdateUpvoteDto } from '../dto/update-upvote.dto';
 import { UpvotesRepository } from 'src/shared/database/repositories/upvotes';
 import { ProductsRepository } from 'src/shared/database/repositories/products';
 import { PrismaService } from 'src/shared/database/prisma.service';
+import { validateUpvotesService } from './validate-upvote.service';
+import { validateProductsService } from 'src/modules/products/services/validate-products.service';
 
 @Injectable()
 export class UpvotesService {
   constructor(
     private readonly UpvotesRepo: UpvotesRepository,
     private readonly ProductsRepo: ProductsRepository,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly validateUpvotes: validateUpvotesService,
+    private readonly validateProducts: validateProductsService
   ) {}
   findAll() {
-    return this.UpvotesRepo.findAll({ include: { product: true } });
+    return this.UpvotesRepo.findAll({ include: { product: false } });
+  }
+
+  async findAllByProductId(productId: string) {
+    await this.validateProducts.validateNotFound(productId);
+    return this.UpvotesRepo.findAll({
+      where: { productId },
+      include: { product: false },
+    });
   }
 
   async findOne(upvoteId: string) {
+    await this.validateUpvotes.validateNotFound(upvoteId);
     const product = await this.UpvotesRepo.findUnique({
       where: { id: upvoteId },
     });
@@ -26,6 +38,7 @@ export class UpvotesService {
 
   async create(createUpvoteDto: CreateUpvoteDto) {
     const { userId, productId } = createUpvoteDto;
+    await this.validateProducts.validateNotFound(productId);
 
     const existingUpvote = await this.UpvotesRepo.findUnique({
       where: { userId_productId: { userId, productId } },
@@ -59,30 +72,32 @@ export class UpvotesService {
     }
   }
 
-  async update(upvoteId: string, updateUpvoteDto: UpdateUpvoteDto) {
-    const { createdAt, productId, userId } = updateUpvoteDto;
-    const upvote = await this.UpvotesRepo.findUnique({
-      where: { id: upvoteId },
-    });
-    if (!upvote) {
-      throw new NotFoundException('Upvote not found');
-    }
-    return this.UpvotesRepo.update({
-      where: { id: upvoteId },
-      data: { createdAt, productId, userId },
-    });
-  }
+  // async update(upvoteId: string, updateUpvoteDto: UpdateUpvoteDto) {
+  //   await this.validateUpvotes.validateNotFound(upvoteId);
+  //   const { createdAt, productId, userId } = updateUpvoteDto;
+  //   const upvote = await this.UpvotesRepo.findUnique({
+  //     where: { id: upvoteId },
+  //   });
+  //   if (!upvote) {
+  //     throw new NotFoundException('Upvote not found');
+  //   }
+  //   return this.UpvotesRepo.update({
+  //     where: { id: upvoteId },
+  //     data: { createdAt, productId, userId },
+  //   });
+  // }
 
-  async remove(upvoteId: string) {
-    const upvote = await this.UpvotesRepo.findUnique({
-      where: { id: upvoteId },
-    });
-    if (!upvote) {
-      throw new NotFoundException('Upvote not found');
-    }
-    await this.UpvotesRepo.delete({
-      where: { id: upvoteId },
-    });
-    return { message: 'Upvote removed' };
-  }
+  // async remove(upvoteId: string) {
+  //   await this.validateUpvotes.validateNotFound(upvoteId);
+  //   const upvote = await this.UpvotesRepo.findUnique({
+  //     where: { id: upvoteId },
+  //   });
+  //   if (!upvote) {
+  //     throw new NotFoundException('Upvote not found');
+  //   }
+  //   await this.UpvotesRepo.delete({
+  //     where: { id: upvoteId },
+  //   });
+  //   return { message: 'Upvote removed' };
+  // }
 }

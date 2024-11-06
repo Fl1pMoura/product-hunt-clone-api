@@ -1,16 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  UseGuards,
-  Put,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { UpvotesService } from './services/upvotes.service';
 import { CreateUpvoteDto } from './dto/create-upvote.dto';
-import { UpdateUpvoteDto } from './dto/update-upvote.dto';
 import { IsPublic } from 'src/shared/decorators/IsPublic';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -22,6 +12,11 @@ export class UpvotesController {
   @IsPublic()
   findAll() {
     return this.upvotesService.findAll();
+  }
+  @Get('product/:productId')
+  @IsPublic()
+  findAllByProductId(@Param('productId') productId: string) {
+    return this.upvotesService.findAllByProductId(productId);
   }
 
   @Get(':upvoteId')
@@ -36,18 +31,18 @@ export class UpvotesController {
     return this.upvotesService.create(createUpvoteDto);
   }
 
-  @Put(':upvoteId')
-  @UseGuards(AuthGuard)
-  update(
-    @Param('upvoteId') upvoteId: string,
-    @Body() updateUpvoteDto: UpdateUpvoteDto
-  ) {
-    return this.upvotesService.update(upvoteId, updateUpvoteDto);
-  }
+  // @Put(':upvoteId')
+  // @UseGuards(AuthGuard)
+  // update(
+  //   @Param('upvoteId') upvoteId: string,
+  //   @Body() updateUpvoteDto: UpdateUpvoteDto
+  // ) {
+  //   return this.upvotesService.update(upvoteId, updateUpvoteDto);
+  // }
 
-  @Delete(':upvoteId')
-  @UseGuards(AuthGuard)
-  remove(@Param('upvoteId') upvoteId: string) {
-    return this.upvotesService.remove(upvoteId);
-  }
+  // @Delete(':upvoteId')
+  // @UseGuards(AuthGuard)
+  // remove(@Param('upvoteId') upvoteId: string) {
+  //   return this.upvotesService.remove(upvoteId);
+  // }
 }
