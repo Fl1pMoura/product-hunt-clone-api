@@ -53,9 +53,9 @@ export class UpvotesService {
           where: { id: productId },
           data: { upvoteCount: { decrement: 1 } },
         }),
-        // Atualizando as tags relacionadas ao produto
-        this.updateTagUpvotes(productId, -1),
       ]);
+      // Atualizando as tags relacionadas ao produto
+      await this.updateTagUpvotes(productId, -1);
       return { message: 'Upvote removed' };
     } else {
       // Se não existe upvote, criamos o novo upvote
@@ -71,9 +71,9 @@ export class UpvotesService {
           where: { id: productId },
           data: { upvoteCount: { increment: 1 } },
         }),
-        // Atualizando as tags relacionadas ao produto
-        this.updateTagUpvotes(productId, 1),
       ]);
+      // Atualizando as tags relacionadas ao produto
+      await this.updateTagUpvotes(productId, 1);
       return newUpvote[0];
     }
   }
