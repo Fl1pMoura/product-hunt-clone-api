@@ -5,6 +5,7 @@ import { ProductsRepository } from 'src/shared/database/repositories/products';
 import { PrismaService } from 'src/shared/database/prisma.service';
 import { validateUpvotesService } from './validate-upvote.service';
 import { validateProductsService } from 'src/modules/products/services/validate-products.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UpvotesService {
@@ -45,15 +46,19 @@ export class UpvotesService {
     });
 
     if (existingUpvote) {
+      // Se já existe um upvote, removemos o upvote do produto e das tags
       await this.prisma.$transaction([
         this.UpvotesRepo.delete({ where: { id: existingUpvote.id } }),
         this.ProductsRepo.update({
           where: { id: productId },
           data: { upvoteCount: { decrement: 1 } },
         }),
+        // Atualizando as tags relacionadas ao produto
+        this.updateTagUpvotes(productId, -1),
       ]);
       return { message: 'Upvote removed' };
     } else {
+      // Se não existe upvote, criamos o novo upvote
       const newUpvote = await this.prisma.$transaction([
         this.UpvotesRepo.create({
           data: {
@@ -66,10 +71,32 @@ export class UpvotesService {
           where: { id: productId },
           data: { upvoteCount: { increment: 1 } },
         }),
+        // Atualizando as tags relacionadas ao produto
+        this.updateTagUpvotes(productId, 1),
       ]);
-
       return newUpvote[0];
     }
+  }
+
+  // Função para atualizar a contagem de upvotes das tags associadas ao produto
+  private async updateTagUpvotes(productId: string, increment: number) {
+    const product = (await this.ProductsRepo.findUnique({
+      where: { id: productId },
+      include: { tags: true },
+    })) as Prisma.ProductGetPayload<{ include: { tags: true } }>; // Tipando explicitamente
+
+    if (!product) {
+      throw new Error(`Produto com ID ${productId} não encontrado.`);
+    }
+
+    const updateTagPromises = product.tags.map((tag) =>
+      this.prisma.tags.update({
+        where: { id: tag.id },
+        data: { upvoteCount: { increment } },
+      })
+    );
+
+    return await Promise.all(updateTagPromises);
   }
 
   // async update(upvoteId: string, updateUpvoteDto: UpdateUpvoteDto) {
