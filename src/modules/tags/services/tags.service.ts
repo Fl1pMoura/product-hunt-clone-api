@@ -11,7 +11,10 @@ export class TagsService {
     private readonly ValidateTags: validateTagsService
   ) {}
   async findAll() {
-    const tags = await this.TagsRepo.findAll({ include: { products: false } });
+    const tags = await this.TagsRepo.findAll({
+      include: { products: false },
+      orderBy: { upvoteCount: 'desc' },
+    });
     return tags;
   }
 

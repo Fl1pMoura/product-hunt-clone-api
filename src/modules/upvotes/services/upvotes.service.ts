@@ -46,6 +46,10 @@ export class UpvotesService {
     });
 
     if (existingUpvote) {
+      const productTags = (await this.ProductsRepo.findUnique({
+        where: { id: productId },
+        select: { tags: true },
+      })) as Prisma.ProductGetPayload<{ include: { tags: true } }>;
       // Se já existe um upvote, removemos o upvote do produto e das tags
       await this.prisma.$transaction([
         this.UpvotesRepo.delete({ where: { id: existingUpvote.id } }),
@@ -53,11 +57,19 @@ export class UpvotesService {
           where: { id: productId },
           data: { upvoteCount: { decrement: 1 } },
         }),
+        ...productTags.tags.map((tag) =>
+          this.prisma.tags.update({
+            where: { id: tag.id },
+            data: { upvoteCount: { decrement: 1 } },
+          })
+        ),
       ]);
-      // Atualizando as tags relacionadas ao produto
-      await this.updateTagUpvotes(productId, -1);
       return { message: 'Upvote removed' };
     } else {
+      const productTags = (await this.ProductsRepo.findUnique({
+        where: { id: productId },
+        select: { tags: true },
+      })) as Prisma.ProductGetPayload<{ include: { tags: true } }>;
       // Se não existe upvote, criamos o novo upvote
       const newUpvote = await this.prisma.$transaction([
         this.UpvotesRepo.create({
@@ -71,32 +83,15 @@ export class UpvotesService {
           where: { id: productId },
           data: { upvoteCount: { increment: 1 } },
         }),
+        ...productTags.tags.map((tag) =>
+          this.prisma.tags.update({
+            where: { id: tag.id },
+            data: { upvoteCount: { increment: 1 } },
+          })
+        ),
       ]);
-      // Atualizando as tags relacionadas ao produto
-      await this.updateTagUpvotes(productId, 1);
       return newUpvote[0];
     }
-  }
-
-  // Função para atualizar a contagem de upvotes das tags associadas ao produto
-  private async updateTagUpvotes(productId: string, increment: number) {
-    const product = (await this.ProductsRepo.findUnique({
-      where: { id: productId },
-      include: { tags: true },
-    })) as Prisma.ProductGetPayload<{ include: { tags: true } }>; // Tipando explicitamente
-
-    if (!product) {
-      throw new Error(`Produto com ID ${productId} não encontrado.`);
-    }
-
-    const updateTagPromises = product.tags.map((tag) =>
-      this.prisma.tags.update({
-        where: { id: tag.id },
-        data: { upvoteCount: { increment } },
-      })
-    );
-
-    return await Promise.all(updateTagPromises);
   }
 
   // async update(upvoteId: string, updateUpvoteDto: UpdateUpvoteDto) {

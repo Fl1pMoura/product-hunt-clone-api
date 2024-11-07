@@ -16,6 +16,7 @@ export class ProductsService {
   async findMany() {
     const products = await this.ProductsRepo.findMany({
       include: { upVotes: false, tags: true },
+      orderBy: { upvoteCount: 'desc' },
     });
 
     return products;
