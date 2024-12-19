@@ -12,6 +12,11 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
   });
-  await app.listen(3000, '0.0.0.0');
+
+  // Usando process.env.PORT para garantir que a aplicação use a porta correta no Fly.io
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0', () => {
+    console.log(`Application is running on: http://0.0.0.0:${port}`);
+  });
 }
 bootstrap();
